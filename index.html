@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="sv">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>PDF-verktyg</title>
+    <meta name="description" content="Läs, redigera, dela upp och slå ihop PDF-filer. Allt sker lokalt i webbläsaren." />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#1f4fd1" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#14171f" media="(prefers-color-scheme: dark)" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  </head>
+  <body>
+    <header id="appbar" class="appbar"></header>
+    <div id="tool-options" class="tool-options" hidden></div>
+    <div class="workspace">
+      <aside id="sidebar" class="sidebar" aria-label="Sidor"></aside>
+      <main id="viewer" class="viewer" tabindex="-1" aria-label="Dokument"></main>
+      <aside id="search-panel" class="search-panel" aria-label="Sök"></aside>
+      <section id="start" class="start"></section>
+      <div class="sidebar-scrim"></div>
+    </div>
+    <div id="busy" class="busy" hidden><div class="spinner"></div><span class="busy-text"></span></div>
+    <div id="update-banner" class="update-banner" hidden>
+      <span>En ny version av appen finns.</span>
+      <button type="button" class="btn btn-small btn-primary">Uppdatera</button>
+    </div>
+    <div class="drop-overlay"><div>Släpp filerna här</div></div>
+    <noscript>PDF-verktyg kräver JavaScript.</noscript>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
