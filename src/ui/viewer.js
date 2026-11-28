@@ -161,8 +161,41 @@ export function setZoom(z, anchor = null, keepFit = false) {
   scheduleRender();
 }
 
+let zoomAnim = 0;
 export function zoomBy(factor) {
-  setZoom(app.zoom * factor);
+  animateZoom(app.zoom * factor);
+}
+
+// Mjuk zoom till en ny nivå.
+export function animateZoom(target) {
+  cancelAnimationFrame(zoomAnim);
+  target = Math.min(6, Math.max(0.1, target));
+  const from = app.zoom;
+  const t0 = performance.now();
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const step = (t) => {
+    const k = reduce ? 1 : Math.min(1, (t - t0) / 160);
+    const e = 1 - Math.pow(1 - k, 3);
+    setZoom(from * Math.pow(target / from, e));
+    if (k < 1) zoomAnim = requestAnimationFrame(step);
+  };
+  zoomAnim = requestAnimationFrame(step);
+}
+
+// Flyttar redan renderade sidbilder till sina nya platser direkt efter en omordning,
+// så att visningen inte blinkar medan sidorna renderas om.
+export function applyOrder(order) {
+  const canvases = pageEls.map((pe) => pe.canvas);
+  canvases.forEach((c) => c.remove());
+  order.forEach((from, to) => {
+    if (pageEls[to] && canvases[from]) pageEls[to].canvas = canvases[from];
+  });
+  pageEls.forEach((pe) => {
+    pe.el.prepend(pe.canvas);
+    pe.el.classList.toggle("rendered", pe.canvas.width > 0);
+    pe.key = null;
+    pe.pending = null;
+  });
 }
 
 // ---------- Rendering ----------
@@ -435,7 +468,10 @@ function onPointerDown(e) {
   const el = pe.el;
   el.setPointerCapture(e.pointerId);
 
-  if (tool === "text") return startText(i, start);
+  if (tool === "text") {
+    el.releasePointerCapture(e.pointerId);
+    return startText(i, start);
+  }
 
   clearPreview();
   let last = start;
@@ -454,6 +490,7 @@ function onPointerDown(e) {
     line.setAttribute("stroke", app.toolOptions.inkColor);
     line.setAttribute("stroke-width", app.toolOptions.inkWidth);
     line.setAttribute("stroke-linecap", "round");
+    line.setAttribute("stroke-opacity", app.toolOptions.inkOpacity ?? 1);
     line.setAttribute("stroke-linejoin", "round");
     svg.append(line);
     pe.overlay.append(svg);
@@ -500,11 +537,11 @@ function onPointerDown(e) {
     const dist = Math.hypot(last[0] - start[0], last[1] - start[1]);
     try {
       if (tool === "draw") {
-        if (points.length >= 2) app.setDoc(await app.client.call("addInk", i, [simplify(points)], hexToRgb(app.toolOptions.inkColor), Number(app.toolOptions.inkWidth)));
+        if (points.length >= 2) app.setDoc(await app.client.call("addInk", i, [simplify(points)], hexToRgb(app.toolOptions.inkColor), Number(app.toolOptions.inkWidth), Number(app.toolOptions.inkOpacity ?? 1)));
       } else if (tool === "highlight") {
         if (dist > 1) {
           quads = await app.client.call("highlightQuads", i, start, last);
-          if (quads.length) app.setDoc(await app.client.call("addHighlight", i, quads, hexToRgb(app.toolOptions.highlightColor)));
+          if (quads.length) app.setDoc(await app.client.call("addHighlight", i, quads, hexToRgb(app.toolOptions.highlightColor), Number(app.toolOptions.highlightOpacity ?? 1)));
           else app.emit("notice", "Ingen text hittades där. Dra över texten du vill markera.");
         }
       } else if (tool === "redact") {
@@ -609,10 +646,9 @@ function startText(i, at) {
     if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) ta.blur();
   });
   pe.overlay.append(ta);
-  requestAnimationFrame(() => {
-    autosize();
-    ta.focus();
-  });
+  // Fokusera direkt så att första tangenten hamnar i textfältet och inte tolkas som kortkommando.
+  ta.focus();
+  requestAnimationFrame(autosize);
 }
 
 export function visiblePages() {

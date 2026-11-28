@@ -60,6 +60,13 @@ export function toggleSearch(force) {
   }
 }
 
+// Öppnar sökpanelen och söker direkt (används av kommandopaletten).
+export function searchFor(query) {
+  toggleSearch(true);
+  input.value = query;
+  run();
+}
+
 function reset() {
   input.value = "";
   lastQuery = "";
@@ -131,7 +138,7 @@ async function highlightAll() {
   const { results } = app.search;
   if (!results.length) return toast("Sök först efter text att markera.");
   try {
-    app.setDoc(await busy("Markerar …", () => app.client.call("addHighlightsForHits", results)));
+    app.setDoc(await busy("Markerar …", () => app.client.call("addHighlightsForHits", results, [1, 0.85, 0], 0.6)));
     toast(`${app.search.flat.length} träffar markerades.`, { type: "success" });
   } catch (e) {
     showError(e);

@@ -37,14 +37,14 @@ export async function listRecent() {
   }
 }
 
-export async function addRecent(handle, name, size) {
+export async function addRecent(handle, name, size, thumb = null) {
   if (!recentEnabled() || !handle) return;
   try {
     const list = await listRecent();
     for (const r of list) {
       if (await r.handle.isSameEntry?.(handle)) await tx("readwrite", (s) => s.delete(r.id));
     }
-    await tx("readwrite", (s) => s.put({ id: crypto.randomUUID(), handle, name, size, opened: Date.now() }));
+    await tx("readwrite", (s) => s.put({ id: crypto.randomUUID(), handle, name, size, thumb, opened: Date.now() }));
     const after = await listRecent();
     for (const r of after.slice(MAX)) await tx("readwrite", (s) => s.delete(r.id));
   } catch (e) {

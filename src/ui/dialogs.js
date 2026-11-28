@@ -521,7 +521,6 @@ async function stampFromDataUrl(url, label, defaultWidth) {
   await img.decode();
   app.stamp = { bytes: dataUrlToBytes(url), url, width: img.naturalWidth, height: img.naturalHeight, label, defaultWidth };
   app.setTool("stamp");
-  toast("Klicka på sidan där den ska placeras, eller dra för att välja storlek.");
 }
 
 export async function signatureDialog() {
@@ -645,7 +644,6 @@ export async function placeImage() {
     app.stamp = { bytes, url, width: bmp.width, height: bmp.height, label: "Infoga bild", defaultWidth: Math.min(300, (bmp.width * 72) / 96) };
     bmp.close();
     app.setTool("stamp");
-    toast("Klicka på sidan där bilden ska placeras, eller dra för att välja storlek.");
   } catch (e) {
     showError(e);
   }
@@ -708,12 +706,14 @@ export async function aboutDialog(version) {
       h("p", {}, "PDF-verktyg körs helt i din webbläsare. Filerna lämnar aldrig datorn: ingenting laddas upp och ingen statistik samlas in. Efter första besöket fungerar appen även utan internet."),
       h("p", {}, `Version ${version}.`),
       h("p", {}, "Appen är fri programvara under licensen GNU AGPL 3.0. ", h("a", { href: "https://github.com/KarmaDonkey/Office-Tools", target: "_blank", rel: "noopener" }, "Källkoden finns på GitHub"), "."),
-      h("p", {}, "PDF-motorn är ", h("a", { href: "https://mupdf.com", target: "_blank", rel: "noopener" }, "MuPDF"), " från Artifex (AGPL). Ikoner från Lucide (ISC)."),
+      h("p", {}, "PDF-motorn är ", h("a", { href: "https://mupdf.com", target: "_blank", rel: "noopener" }, "MuPDF"), " från Artifex (AGPL). Ikoner från Lucide (ISC), typsnittet Inter (SIL OFL)."),
       h("h3", {}, "Kortkommandon"),
       h(
         "dl",
         { class: "shortcuts" },
         [
+          ["Ctrl+K", "Kommandopalett: sök bland alla funktioner"],
+          ["V H T D S M E", "Pekare, markera, text, rita, signera, maskera, radera"],
           ["Ctrl+O", "Öppna"],
           ["Ctrl+S", "Spara"],
           ["Ctrl+Skift+S", "Spara som"],

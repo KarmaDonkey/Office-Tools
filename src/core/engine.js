@@ -576,23 +576,25 @@ export function createEngine(mupdf) {
 
     // ---------- Anteckningar ----------
 
-    addHighlight(i, quads, color = [1, 0.85, 0]) {
+    addHighlight(i, quads, color = [1, 0.85, 0], opacity = 1) {
       return mutate("Markera", (d) => {
         const page = d.loadPage(i);
         const a = page.createAnnotation("Highlight");
         a.setColor(color);
+        if (opacity < 1) a.setOpacity(opacity);
         a.setQuadPoints(quads);
         a.update();
       }).state;
     },
 
-    addHighlightsForHits(results, color = [1, 0.85, 0]) {
+    addHighlightsForHits(results, color = [1, 0.85, 0], opacity = 1) {
       return mutate("Markera sökträffar", (d) => {
         for (const { page: i, hits } of results) {
           const page = d.loadPage(i);
           for (const quads of hits) {
             const a = page.createAnnotation("Highlight");
             a.setColor(color);
+            if (opacity < 1) a.setOpacity(opacity);
             a.setQuadPoints(quads);
             a.update();
           }
@@ -600,12 +602,13 @@ export function createEngine(mupdf) {
       }).state;
     },
 
-    addInk(i, strokes, color = [0.85, 0, 0], width = 2) {
+    addInk(i, strokes, color = [0.85, 0, 0], width = 2, opacity = 1) {
       return mutate("Rita", (d) => {
         const page = d.loadPage(i);
         const a = page.createAnnotation("Ink");
         a.setInkList(strokes);
         a.setColor(color);
+        if (opacity < 1) a.setOpacity(opacity);
         a.setBorderWidth(width);
         a.update();
       }).state;

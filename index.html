@@ -5,27 +5,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>PDF-verktyg</title>
     <meta name="description" content="Läs, redigera, dela upp och slå ihop PDF-filer. Allt sker lokalt i webbläsaren." />
-    <meta name="color-scheme" content="light dark" />
-    <meta name="theme-color" content="#1f4fd1" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#14171f" media="(prefers-color-scheme: dark)" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="theme-color" content="#0a0a12" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f3f1ff" media="(prefers-color-scheme: light)" />
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="icons/icon-192.png" />
   </head>
   <body>
-    <header id="appbar" class="appbar"></header>
-    <div id="tool-options" class="tool-options" hidden></div>
+    <div class="ambient" aria-hidden="true"></div>
+    <header id="appbar" class="topbar"></header>
     <div class="workspace">
       <aside id="sidebar" class="sidebar" aria-label="Sidor"></aside>
-      <main id="viewer" class="viewer" tabindex="-1" aria-label="Dokument"></main>
-      <aside id="search-panel" class="search-panel" aria-label="Sök"></aside>
+      <div class="stage">
+        <main id="viewer" class="viewer" tabindex="-1" aria-label="Dokument"></main>
+        <div id="tool-pop" class="tool-pop glass" role="toolbar" aria-label="Verktygsinställningar"></div>
+        <nav id="dock" class="dock glass" aria-label="Verktyg"></nav>
+        <div id="pager" class="pager glass"></div>
+        <div id="zoombox" class="zoombox glass"></div>
+      </div>
+      <aside id="search-panel" class="search-panel glass" aria-label="Sök"></aside>
       <section id="start" class="start"></section>
       <div class="sidebar-scrim"></div>
     </div>
     <div id="busy" class="busy" hidden><div class="spinner"></div><span class="busy-text"></span></div>
-    <div id="update-banner" class="update-banner" hidden>
+    <div id="update-banner" class="update-banner glass" hidden>
       <span>En ny version av appen finns.</span>
-      <button type="button" class="btn btn-small btn-primary">Uppdatera</button>
+      <button type="button" class="btn btn-small btn-grad">Uppdatera</button>
     </div>
     <div class="drop-overlay"><div>Släpp filerna här</div></div>
     <noscript>PDF-verktyg kräver JavaScript.</noscript>

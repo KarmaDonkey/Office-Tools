@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/KarmaDonkey/Office-Tools#readme",
   "dependencies": {
+    "@fontsource-variable/inter": "5.3.0",
     "mupdf": "1.28.6"
   },
   "devDependencies": {

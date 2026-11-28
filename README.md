@@ -29,7 +29,14 @@ Byggd för Chrome och Edge på datorn. Gränssnittet är responsivt men är inte
 - Komprimera (utan förlust, medel eller stark bildkomprimering)
 - Bilder till PDF och PDF till bilder (PNG/JPEG, 72–300 dpi)
 - Spara direkt i originalfilen, senaste filer och "Öppna med" från Utforskaren (installerad app)
-- Ångra/gör om för alla ändringar, mörkt läge
+- Ångra/gör om för alla ändringar, mörkt och ljust läge
+
+**Gränssnitt**
+- Kommandopalett (Ctrl+K) som hittar alla funktioner och söker i texten
+- Flytande verktygspanel med kortkommandon: V pekare, H markera, T text, D rita, S signera, M maskera, E radera
+- Opacitet för markeringar och ritningar
+- Animerad omflyttning av sidor, snabbknappar på miniatyrerna och förhandsbilder i listan med senaste filer
+- Typsnittet Inter ingår i appen och fungerar offline
 
 ## Utveckling
 
@@ -60,4 +67,4 @@ npm run preview  # kör det byggda resultatet lokalt
 
 ## Licens
 
-GNU Affero General Public License 3.0 eller senare, se [LICENSE](LICENSE). PDF-motorn [MuPDF](https://mupdf.com) är © Artifex Software och licensierad under AGPL. Ikonerna kommer från [Lucide](https://lucide.dev) (ISC).
+GNU Affero General Public License 3.0 eller senare, se [LICENSE](LICENSE). PDF-motorn [MuPDF](https://mupdf.com) är © Artifex Software och licensierad under AGPL. Ikonerna kommer från [Lucide](https://lucide.dev) (ISC) och typsnittet Inter från [Fontsource](https://fontsource.org) (SIL Open Font License).
