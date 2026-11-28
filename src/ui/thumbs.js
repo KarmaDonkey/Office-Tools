@@ -1,7 +1,8 @@
 // Miniatyrer i sidopanelen: välja, dra för att ändra ordning, sidåtgärder.
 import { app } from "../store.js";
 import { h, iconButton, showError } from "./dom.js";
-import { goToPage } from "./viewer.js";
+import { goToPage, applyOrder } from "./viewer.js";
+import { icon } from "./icons.js";
 
 let panel;
 let list;
@@ -11,23 +12,31 @@ const visible = new Set();
 let anchor = 0;
 let dragIndices = null;
 let dropMarker;
+let countEl;
+let pageActions;
 
-const THUMB_W = () => (panel.classList.contains("grid") ? 170 : 116);
+const THUMB_W = () => (panel.classList.contains("grid") ? 180 : 132);
 
 export function initThumbs(el, actions) {
   panel = el;
   list = h("div", { class: "thumb-list", role: "listbox", "aria-label": "Sidor", "aria-multiselectable": "true", tabindex: 0 });
   dropMarker = h("div", { class: "drop-marker", hidden: true });
+  countEl = h("span", { class: "thumb-count" });
   const toolbar = h(
     "div",
-    { class: "thumb-toolbar" },
-    iconButton("rotate-ccw", "Rotera vänster", () => actions.rotate(-90)),
-    iconButton("rotate-cw", "Rotera höger", () => actions.rotate(90)),
-    iconButton("trash-2", "Ta bort valda sidor", () => actions.remove()),
-    iconButton("file-output", "Plocka ut valda sidor", () => actions.extract()),
-    h("span", { class: "spacer" }),
-    iconButton("layout-grid", "Sidöversikt", () => toggleGrid(), { class: "grid-toggle" }),
+    { class: "thumb-head" },
+    h("h4", {}, "Sidor", countEl),
+    h(
+      "div",
+      { class: "thumb-toolbar" },
+      iconButton("rotate-ccw", "Rotera valda åt vänster", () => actions.rotate(-90)),
+      iconButton("rotate-cw", "Rotera valda åt höger", () => actions.rotate(90)),
+      iconButton("trash-2", "Ta bort valda sidor", () => actions.remove()),
+      iconButton("file-output", "Plocka ut valda sidor", () => actions.extract()),
+      iconButton("layout-grid", "Sidöversikt", () => toggleGrid(), { class: "grid-toggle" }),
+    ),
   );
+  pageActions = actions;
   panel.append(toolbar, h("div", { class: "thumb-scroll" }, list, dropMarker));
   observer = new IntersectionObserver(
     (entries) => {
@@ -91,7 +100,13 @@ function onDoc(state) {
     const i = items.length;
     const canvas = h("canvas", {});
     const label = h("span", { class: "thumb-label" }, String(i + 1));
-    const el = h("div", { class: "thumb", role: "option", draggable: "true", dataset: { index: i } }, h("div", { class: "thumb-frame" }, canvas), label);
+    const quick = h(
+      "div",
+      { class: "thumb-quick" },
+      h("button", { type: "button", title: "Rotera", "aria-label": "Rotera sidan", onclick: (e) => { e.stopPropagation(); quickAction("rotate", Number(el.dataset.index)); } }, icon("rotate-cw")),
+      h("button", { type: "button", title: "Ta bort", "aria-label": "Ta bort sidan", onclick: (e) => { e.stopPropagation(); quickAction("remove", Number(el.dataset.index)); } }, icon("trash-2")),
+    );
+    const el = h("div", { class: "thumb", role: "option", draggable: "true", dataset: { index: i } }, h("div", { class: "thumb-frame" }, canvas, quick), label);
     el.addEventListener("click", (e) => select(Number(el.dataset.index), { ctrl: e.ctrlKey || e.metaKey, shift: e.shiftKey }));
     el.addEventListener("dblclick", () => {
       if (panel.classList.contains("grid")) toggleGrid(false);
@@ -113,9 +128,20 @@ function onDoc(state) {
     visible.delete(items.length);
     it.el.remove();
   }
+  countEl.textContent = String(n);
   layout();
   updateSelection();
   renderVisible();
+}
+
+// Snabbknapparna på en miniatyr gäller bara den sidan.
+function quickAction(kind, i) {
+  app.selection.clear();
+  app.selection.add(i);
+  updateSelection();
+  app.emit("selection");
+  if (kind === "rotate") pageActions.rotate(90);
+  else pageActions.remove();
 }
 
 function layout() {
@@ -204,6 +230,16 @@ function onDragStart(e, i) {
   dragIndices = [...app.selection].sort((a, b) => a - b);
   e.dataTransfer.effectAllowed = "move";
   e.dataTransfer.setData("application/x-pdf-pages", dragIndices.join(","));
+  const frame = items[i].el.querySelector(".thumb-frame");
+  const ghost = frame.cloneNode(true);
+  const src = frame.querySelector("canvas");
+  const copy = ghost.querySelector("canvas");
+  if (src.width && src.height) copy.getContext("2d").drawImage(src, 0, 0);
+  ghost.classList.add("drag-ghost");
+  if (dragIndices.length > 1) ghost.append(h("span", { class: "drag-count" }, String(dragIndices.length)));
+  document.body.append(ghost);
+  e.dataTransfer.setDragImage(ghost, frame.offsetWidth / 2, 20);
+  setTimeout(() => ghost.remove(), 0);
   list.classList.add("dragging");
 }
 
@@ -258,12 +294,39 @@ async function onDrop(e) {
   dragIndices = null;
   try {
     const { state, order } = await app.client.call("movePages", indices, before);
+    if (state.rev === app.doc.rev) return;
+    const first = items.map((it) => it.el.querySelector(".thumb-frame").getBoundingClientRect());
+    // Flytta de redan ritade miniatyrerna och sidbilderna till sina nya platser.
+    const canvases = items.map((it) => it.canvas);
+    order.forEach((from, to) => {
+      const it = items[to];
+      it.canvas = canvases[from];
+      it.el.querySelector(".thumb-frame").prepend(it.canvas);
+      it.key = null;
+    });
+    applyOrder(order);
     const moved = new Set(indices);
     app.selection.clear();
     order.forEach((orig, pos) => moved.has(orig) && app.selection.add(pos));
     app.setDoc(state);
     app.emit("selection");
+    flip(order, first, moved);
   } catch (err) {
     showError(err);
   }
+}
+
+// FLIP-animation: varje miniatyr glider från sin gamla plats till den nya.
+function flip(order, first, moved) {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  order.forEach((from, to) => {
+    const frame = items[to]?.el.querySelector(".thumb-frame");
+    if (!frame || !first[from]) return;
+    const last = frame.getBoundingClientRect();
+    const dx = first[from].left - last.left;
+    const dy = first[from].top - last.top;
+    if (!dx && !dy) return;
+    frame.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: "none" }], { duration: 320, easing: "cubic-bezier(.2,.8,.2,1)" });
+    if (moved.has(from)) items[to].el.animate([{ filter: "drop-shadow(0 0 0 transparent)" }, { filter: "drop-shadow(0 0 14px #c64bff)" }, { filter: "drop-shadow(0 0 0 transparent)" }], { duration: 700 });
+  });
 }

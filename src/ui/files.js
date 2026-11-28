@@ -76,8 +76,26 @@ export async function openPdf(file, handle = null) {
   app.setDoc(state);
   app.emit("search");
   app.emit("file");
-  if (handle) addRecent(handle, file.name, file.size);
+  // Ingen förhandsbild för lösenordsskyddade filer: den skulle sparas oskyddad.
+  if (handle) (app.doc.encrypted ? Promise.resolve(null) : firstPageThumb()).then((thumb) => addRecent(handle, file.name, file.size, thumb));
   return true;
+}
+
+// Liten förhandsbild av första sidan till listan med senaste filer.
+async function firstPageThumb() {
+  try {
+    const p = app.doc.pages[0];
+    if (!p) return null;
+    const res = await app.client.call("renderBitmap", 0, 220 / Math.max(p.w, p.h), true);
+    const canvas = document.createElement("canvas");
+    canvas.width = res.width;
+    canvas.height = res.height;
+    canvas.getContext("2d").drawImage(res.bitmap, 0, 0);
+    res.bitmap.close();
+    return canvas.toDataURL("image/webp", 0.8);
+  } catch {
+    return null;
+  }
 }
 
 // Öppnar en eller flera filer. Flera filer (eller bilder) slås ihop till ett nytt dokument.
@@ -267,7 +285,7 @@ export async function save({ as = false } = {}) {
       if (handle) {
         app.file.name = handle.name;
         app.file.handle = handle;
-        addRecent(handle, handle.name, bytes.length);
+        (app.saveEncryption.mode === "set" || app.doc.encrypted ? Promise.resolve(null) : firstPageThumb()).then((thumb) => addRecent(handle, handle.name, bytes.length, thumb));
       }
     }
     app.file.size = bytes.length;

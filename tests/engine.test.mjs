@@ -87,8 +87,10 @@ test("anteckningar, maskering och formulärfria sidor", () => {
   const hits = e.search("hemlig");
   assert.equal(hits.length, 1);
   e.addHighlight(0, hits[0].hits[0]);
-  e.addInk(0, [[[100, 100], [150, 150]]]);
+  e.addInk(0, [[[100, 100], [150, 150]]], [0, 0, 1], 3, 0.5);
   e.addText(0, [72, 300, 300, 330], "Åäö text", 14);
+  const inkOpacity = mupdf.Document.openDocument(e.save(), "application/pdf").loadPage(0).getAnnotations()[1].getOpacity();
+  assert.equal(inkOpacity, 0.5);
   const types = e.listAnnots(0).map((a) => a.type);
   assert.deepEqual(types, ["Highlight", "Ink", "FreeText"]);
   e.addRedactionsForHits(hits);

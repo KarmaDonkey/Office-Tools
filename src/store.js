@@ -9,6 +9,8 @@ export const app = {
   tool: "select",
   toolOptions: {
     highlightColor: "#ffd400",
+    highlightOpacity: 1,
+    inkOpacity: 1,
     inkColor: "#d40000",
     inkWidth: 2,
     textColor: "#000000",
